@@ -1,0 +1,622 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+<title>Robô Astronauta — Estudo Dimensional</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;600&display=swap">
+<style>
+/* layout: coluna esquerda = vis. 3D sobre vis. 2D; coluna direita = parâmetros, info, corte */
+:root{
+  --bg:#f5f4f1; --painel:#ffffff; --fg:#1d232a; --fg2:#5c666f;
+  --tubo:#1565c0; --junta:#e65100; --linha:#d9d6cf; --grade:#e8e6e0;
+  --display:"Archivo","IBM Plex Sans",system-ui,sans-serif;
+  --corpo:"IBM Plex Sans",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#15191e; --painel:#1d232a; --fg:#e8eaed; --fg2:#9aa4ad;
+    --tubo:#64a5e8; --junta:#ff8a3d; --linha:#333b44; --grade:#232a32;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#15191e; --painel:#1d232a; --fg:#e8eaed; --fg2:#9aa4ad;
+  --tubo:#64a5e8; --junta:#ff8a3d; --linha:#333b44; --grade:#232a32;
+  color-scheme:dark;
+}
+body{background:var(--bg);color:var(--fg);font-family:var(--corpo);
+  padding-inline:16px;padding-block:18px;max-width:1280px;margin-inline:auto}
+header h1{font-family:var(--display);font-weight:700;font-size:1.5rem;margin:0;text-wrap:balance}
+header p{margin:.3rem 0 0;color:var(--fg2);font-size:.9rem;max-width:70ch}
+.principal{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:16px;margin-top:18px}
+.coluna-vis,.coluna-dir{display:flex;flex-direction:column;gap:16px;min-width:0}
+.painel{background:var(--painel);border:1px solid var(--linha);border-radius:8px}
+.barra-vis{display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:8px 14px;border-bottom:1px solid var(--linha)}
+.barra-vis h2{font-family:var(--display);font-size:.82rem;font-weight:700;margin:0;
+  letter-spacing:.07em;text-transform:uppercase;color:var(--fg2)}
+.modos{display:flex;gap:6px}
+.modos button{font-family:var(--corpo);font-size:.8rem;padding:4px 12px;border-radius:999px;
+  border:1px solid var(--linha);background:var(--bg);color:var(--fg2);cursor:pointer}
+.modos button[aria-pressed="true"]{background:var(--tubo);border-color:var(--tubo);color:#fff}
+.modos button:disabled{opacity:.55;cursor:not-allowed}
+.modos button:focus-visible{outline:2px solid var(--junta)}
+#vista3d{height:460px;touch-action:none}
+#vista2d svg{display:block;width:100%;height:auto}
+.lat-controles{display:flex;gap:18px;flex-wrap:wrap;padding:10px 16px;border-top:1px solid var(--linha);font-size:.85rem}
+.lat-controles label{display:flex;align-items:center;gap:6px;color:var(--fg2);cursor:pointer}
+.legenda-j{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));
+  gap:3px 14px;padding:12px 16px;border-top:1px solid var(--linha);font-size:.78rem;color:var(--fg2)}
+.legenda-j b{color:var(--junta);font-family:var(--mono)}
+.painel-corpo{padding:14px 16px}
+.campo{display:flex;flex-direction:column;gap:4px}
+.campo label{font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--fg2)}
+.campo input{font-family:var(--mono);font-size:1.15rem;padding:8px 10px;width:100%;box-sizing:border-box;
+  border:1px solid var(--linha);border-radius:6px;background:var(--bg);color:var(--fg)}
+.campo input:focus-visible{outline:2px solid var(--tubo)}
+dl.info{display:grid;grid-template-columns:1fr auto;gap:5px 14px;margin:0;font-size:.9rem}
+dl.info dt{color:var(--fg2)}
+dl.info dd{margin:0;font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right}
+#lista table{border-collapse:collapse;width:100%;font-size:.84rem}
+#lista th{font-size:.68rem;letter-spacing:.06em;text-transform:uppercase;color:var(--fg2);
+  text-align:left;padding:4px 6px;border-bottom:2px solid var(--linha)}
+#lista td{padding:4px 6px;border-bottom:1px solid var(--linha);font-variant-numeric:tabular-nums}
+#lista td.n{font-family:var(--mono);white-space:nowrap}
+#lista tfoot td{font-weight:600;border-bottom:none}
+#lista .nota{color:var(--fg2);font-size:.8rem;margin:10px 0 0}
+footer{color:var(--fg2);font-size:.78rem;margin-top:16px;font-family:var(--mono)}
+@media (max-width:860px){
+  .principal{grid-template-columns:1fr}
+  .coluna-dir{order:-1}
+  #vista3d{height:400px}
+}
+</style>
+
+<header>
+  <h1>Robô Astronauta — Estudo Dimensional</h1>
+  <p>Estrutura interna e articulações da estátua (OS-2026-0821 · FAZ Makerspace). Visualização de estudo para análise — medidas aproximadas, sujeitas a ajuste no detalhamento.</p>
+</header>
+
+<div class="principal">
+  <div class="coluna-vis">
+    <div class="painel">
+      <div class="barra-vis">
+        <h2>Vista 3D</h2>
+        <div class="modos">
+          <button id="modo-esqueleto" aria-pressed="true">Esqueleto</button>
+          <button id="modo-juntas" aria-pressed="false">Modelo com juntas</button>
+        </div>
+      </div>
+      <div id="vista3d"></div>
+    </div>
+    <div class="painel">
+      <div class="barra-vis"><h2>Desenho dimensional</h2></div>
+      <div id="vista2d"></div>
+    </div>
+  </div>
+
+  <aside class="coluna-dir">
+    <div class="painel"><div class="painel-corpo">
+      <div class="campo">
+        <label>Altura ao topo da cabeça</label>
+        <div style="font-family:var(--mono);font-size:1.3rem">1,30 m</div>
+        <input id="altura" type="hidden" value="1.30">
+      </div>
+    </div></div>
+    <div class="painel">
+      <div class="barra-vis"><h2>Modelo</h2></div>
+      <div class="painel-corpo"><dl class="info" id="info"></dl></div>
+    </div>
+<div id="lista" hidden></div>
+  </aside>
+</div>
+
+<footer>FAZ Makerspace · OS-2026-0821 · estudo dimensional — cotas em mm, centro a centro das articulações</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+"use strict";
+/* ============================================================
+   MODELO PARAMÉTRICO
+   Coordenadas cruas em "unidades do modelo" (Meshy, 120 un de altura
+   total; topo da cabeça em z=111). fator = altura_mm / 111.
+   x = largura (+ = esquerda do robô), y = profundidade, z = altura.
+   ============================================================ */
+const CRU = {
+  topoCabeca: 111, topoAntenas: 115.7,  // antenas medidas na foto (mais curtas que no Meshy)
+  cabecaCentro: {x:0, y:0, z:87.15}, cabecaR: 29.6,
+  larguraTotal: 2*34.55, profTotal: 59.0, areaCasca11: 3.90,  // m² no fator 11,532
+  // postura lateral (23/10, medida no frame de perfil): eixo central vertical
+  // (y=0); canela em −3,4 un (À FRENTE do centro; frente = −y) e joelho em −1,0 —
+  // medidos no frame de perfil (que olha para a direita)
+  joelho:   {x:10.46, y:-1.0, z:21.87},
+  quadril:  {x: 7.76, y: 0.0, z:35.55},
+  // ombro/cotovelo/punho: centros medidos NO EDITOR Rascunho Astro (23/10):
+  // E1=ombro, ponto médio de E3=cotovelo, E2=pulso; joelho do anel da bota
+  ombro:    {x:19.55, y: 0.1, z:58.26},
+  cotovelo: {x:24.15, y: 0.3, z:50.73},
+  punho:    {x:32.41, y:-0.1, z:35.78},
+  travX: 15.0,   // meia-largura da travessa, DENTRO DO CORPO, na altura do ombro
+  pescocoBase:{x:0, y:0, z:58.96},
+  pescocoTopo:{x:0, y:0, z:68.42},
+  tornozeloX: 11.56, tornozeloY: -1.0,  // = y do joelho: canela ⊥ ao plano da base
+  tornJuntaZ: 10.0,   // junta do tornozelo (gira o pé + flexiona), dentro da bota
+  baseR: 37,
+};
+const FISICO = { sola: 20, chapa: 3, recuoPlaca: 10 };   // mm, não escalam
+// contorno do pé direito em XY (unidades do modelo, casco convexo decimado)
+const PE_CONTORNO = [[-20.24,-0.59],[-19.52,-10.88],[-18.73,-13.08],[-17.89,-14.42],
+  [-16.71,-15.47],[-14.73,-16.44],[-12.61,-17.03],[-10.01,-17.1],[-8.28,-16.73],
+  [-6.4,-16.03],[-4.78,-14.98],[-3.26,-12.75],[-2.66,-10.91],[-1.97,-0.12],
+  [-2.17,1.53],[-3.05,3.88],[-4.69,6.12],[-6.58,7.57],[-8.56,8.39],[-11.21,8.75],
+  [-13.92,8.31],[-16.53,7.0],[-18.21,5.44],[-19.04,4.12],[-19.89,1.74]];
+const PE_CENTRO = [-11.21, -4.72], PE_RMIN = 9.62;
+const BITOLAS = { g:'Ø25,4×1,5 (1")', m:'Ø19,05×1,2 (3/4")', c:'Ø31,75×1,5 (1.1/4")' };
+
+// Junções numeradas (TODAS, fixas ou móveis) — referência de projeto.
+// Ordem: de baixo pra cima; direita antes de esquerda.
+const JUNCOES = [
+  {n: 1, k:"tornozelo_d", nome:"tornozelo D (chapa→canela)"},
+  {n: 2, k:"tornozelo_e", nome:"tornozelo E (chapa→canela)"},
+  {n: 3, k:"joelho_d",    nome:"joelho D (canela→coxa)"},
+  {n: 4, k:"joelho_e",    nome:"joelho E (canela→coxa)"},
+  {n: 5, k:"quadril_d",   nome:"quadril D (coxa→eixo quadril)"},
+  {n: 6, k:"quadril_e",   nome:"quadril E (coxa→eixo quadril)"},
+  {n: 7, k:"quadrilC",    nome:"centro do quadril (eixo→coluna)"},
+  {n: 8, k:"pescocoBase", nome:"base do pescoço (coluna→pescoço)"},
+  {n: 9, k:"pescocoTopo", nome:"topo do pescoço (pescoço→haste)"},
+  {n:10, k:"trav_d",      nome:"ponta da travessa D (dentro do corpo)"},
+  {n:11, k:"trav_e",      nome:"ponta da travessa E (dentro do corpo)"},
+  {n:12, k:"ombro_d",     nome:"ombro D (encaixe→úmero)"},
+  {n:13, k:"ombro_e",     nome:"ombro E (encaixe→úmero)"},
+  {n:14, k:"cotovelo_d",  nome:"cotovelo D (úmero→antebraço)"},
+  {n:15, k:"cotovelo_e",  nome:"cotovelo E (úmero→antebraço)"},
+  {n:16, k:"punho_d",     nome:"punho D (antebraço→mão)"},
+  {n:17, k:"punho_e",     nome:"punho E (antebraço→mão)"},
+  {n:18, k:"cabecaC",     nome:"anel da cabeça (haste→anel)"},
+  {n:19, k:"tornJunta_d", nome:"junta do tornozelo D (gira pé + flexiona)"},
+  {n:20, k:"tornJunta_e", nome:"junta do tornozelo E (gira pé + flexiona)"},
+  {n:21, k:"cabJunta",    nome:"junta da cabeça (gira + inclina, oculta)"},
+];
+
+function esc(p, f){ return {x:p.x*f, y:p.y*f, z:p.z*f}; }
+function espelha(p){ return {x:-p.x, y:p.y, z:p.z}; }
+function dist(a,b){ return Math.hypot(a.x-b.x, a.y-b.y, a.z-b.z); }
+
+function computa(alturaMm){
+  const f = alturaMm / CRU.topoCabeca;
+  const J = {};
+  const zChapa = FISICO.sola + FISICO.chapa;
+  J.tornozelo_e = {x: CRU.tornozeloX*f, y: CRU.tornozeloY*f, z: zChapa};
+  J.tornJunta_e = {x: CRU.tornozeloX*f, y: CRU.tornozeloY*f, z: CRU.tornJuntaZ*f};
+  J.tornJunta_d = espelha(J.tornJunta_e);
+  J.joelho_e    = esc(CRU.joelho, f);
+  J.quadril_e   = esc(CRU.quadril, f);
+  J.ombro_e     = esc(CRU.ombro, f);
+  J.cotovelo_e  = esc(CRU.cotovelo, f);
+  J.punho_e     = esc(CRU.punho, f);
+  for (const k of ["tornozelo","joelho","quadril","ombro","cotovelo","punho"])
+    J[k+"_d"] = espelha(J[k+"_e"]);
+  J.pescocoBase = esc(CRU.pescocoBase, f);
+  J.pescocoTopo = esc(CRU.pescocoTopo, f);
+  J.cabecaC     = esc(CRU.cabecaCentro, f);
+  J.quadrilC    = {x:0, y:J.quadril_e.y, z:J.quadril_e.z};
+  // travessa DENTRO DO CORPO, na altura dos discos do ombro (correção 23/10);
+  // o encaixe sai horizontal da ponta da travessa até o disco do ombro
+  J.trav_e = {x: CRU.travX*f, y: J.ombro_e.y, z: J.ombro_e.z};
+  J.trav_d = espelha(J.trav_e);
+  // junta da cabeça: dentro da cabeça, acima do topo do pescoço
+  J.cabJunta = {x: J.pescocoTopo.x,
+                y: J.pescocoTopo.y + (J.cabecaC.y - J.pescocoTopo.y)*0.3,
+                z: J.pescocoTopo.z + (J.cabecaC.z - J.pescocoTopo.z)*0.3};
+
+  const seg = (nome,a,b,bit,qtd) => ({nome, a:J[a], b:J[b], bit, qtd, L: dist(J[a],J[b])});
+  const segs = [
+    seg("canela","tornJunta_e","joelho_e","g",2),
+    seg("tubo do pé","tornozelo_e","tornJunta_e","g",2),
+    seg("coxa","joelho_e","quadril_e","g",2),
+    seg("coluna","quadrilC","pescocoBase","c",1),
+    seg("eixo quadril","quadril_d","quadril_e","g",1),
+    seg("travessa ombro","trav_d","trav_e","g",1),
+    seg("encaixe ombro","trav_e","ombro_e","m",2),
+    seg("úmero","ombro_e","cotovelo_e","m",2),
+    seg("antebraço","cotovelo_e","punho_e","m",2),
+    seg("pescoço","pescocoBase","cabJunta","m",1),
+    seg("tubo da cabeça","cabJunta","cabecaC","m",1),
+  ];
+  const barras = [];
+  for (const s of segs){
+    barras.push([s.a, s.b, s.bit]);
+    if (s.qtd === 2 && !s.nome.includes("eixo"))
+      barras.push([espelha(s.a), espelha(s.b), s.bit]);
+  }
+  const total = segs.reduce((t,s)=> t + s.L*s.qtd, 0);
+  const areaCasca = CRU.areaCasca11 * Math.pow(f/11.532, 2);
+  const largura = 2 * Math.max(J.punho_e.x, J.cotovelo_e.x, CRU.cabecaR*f);
+  return {f, J, segs, barras, total,
+          antenas: CRU.topoAntenas*f, cabecaD: 2*CRU.cabecaR*f,
+          largura, prof: CRU.profTotal*f,
+          baseD: 2*CRU.baseR*f, areaCasca, kgCasca: areaCasca*1e4*0.4*1.27/1000};
+}
+
+/* ============ estado ============ */
+let estado = computa(1300);   // altura de trabalho: 1,30 m (decisão 23/10)
+let modo3d = "esqueleto";          // "esqueleto" | "juntas"
+const PIVOS = ["joelho_e","joelho_d","quadril_e","quadril_d",
+               "ombro_e","ombro_d","cotovelo_e","cotovelo_d","punho_e","punho_d"];
+const PIVOS_2GL = ["quadril_e","quadril_d","ombro_e","ombro_d"];  // 2 graus de liberdade
+const $ = id => document.getElementById(id);
+
+function atualizaTudo(){
+  const m = parseFloat($("altura").value);
+  if (!isFinite(m) || m < 0.3) return;
+  estado = computa(m*1000);
+  montaInfo(); montaCena(); desenha2D(); montaLista();
+}
+
+function montaInfo(){
+  const e = estado;
+  const linhas = [
+    ["fator de escala", e.f.toFixed(2) + "×"],
+    ["altura c/ antenas", (e.antenas/1000).toFixed(2) + " m"],
+    ["largura total (braços)", Math.round(e.largura) + " mm"],
+    ["profundidade total", Math.round(e.prof) + " mm"],
+    ["cabeça", "Ø " + Math.round(e.cabecaD) + " mm"],
+    ["base MDF", "Ø " + Math.round(e.baseD) + " mm"],
+  ];
+  $("info").innerHTML = linhas.map(([t,v]) => `<dt>${t}</dt><dd>${v}</dd>`).join("");
+}
+
+/* ============ vista 3D ============ */
+let ren, cena, cam, ctl, grupo, cabecaGeo = null;
+fetch("cabeca-lowpoly.json").then(r => r.json()).then(d => {
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.BufferAttribute(new Float32Array(d.p), 3));
+  g.rotateX(-Math.PI/2);          // modelo z-up -> cena y-up (face para +z)
+  g.computeVertexNormals();
+  cabecaGeo = g;
+  montaCena();
+}).catch(()=>{});
+
+function init3D(){
+  const el = $("vista3d");
+  ren = new THREE.WebGLRenderer({antialias:true});
+  ren.setPixelRatio(Math.min(devicePixelRatio,2));
+  el.appendChild(ren.domElement);
+  cena = new THREE.Scene();
+  cam = new THREE.PerspectiveCamera(42, 1, 10, 30000);
+  cam.position.set(1700, 1100, 2100);
+  ctl = new THREE.OrbitControls(cam, ren.domElement);
+  ctl.target.set(0, 650, 0);
+  cena.add(new THREE.HemisphereLight(0xffffff, 0x667788, 1.0));
+  const sol = new THREE.DirectionalLight(0xffffff, 0.7);
+  sol.position.set(900, 1600, 1100);
+  cena.add(sol);
+  const redim = () => {
+    const w = el.clientWidth, h = el.clientHeight;
+    if (!w || !h) return;
+    ren.setSize(w, h); cam.aspect = w/h; cam.updateProjectionMatrix();
+  };
+  new ResizeObserver(redim).observe(el); redim();
+  (function anima(){ requestAnimationFrame(anima); ctl.update(); ren.render(cena, cam); })();
+}
+function tubo3D(a, b, raio, cor){
+  const va = new THREE.Vector3(a.x, a.z, a.y), vb = new THREE.Vector3(b.x, b.z, b.y);
+  const dir = vb.clone().sub(va), L = dir.length();
+  const g = new THREE.CylinderGeometry(raio, raio, L, 20);
+  const m = new THREE.Mesh(g, new THREE.MeshStandardMaterial({color:cor, metalness:.55, roughness:.4}));
+  m.position.copy(va.clone().add(vb).multiplyScalar(.5));
+  m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), dir.normalize());
+  return m;
+}
+function montaCena(){
+  if (!ren) return;
+  if (grupo) cena.remove(grupo);
+  grupo = new THREE.Group();
+  const e = estado, escuro = matchMedia("(prefers-color-scheme: dark)").matches &&
+            document.documentElement.dataset.theme !== "light" ||
+            document.documentElement.dataset.theme === "dark";
+  cena.background = new THREE.Color(escuro ? 0x15191e : 0xeceae5);
+  const grade = new THREE.GridHelper(2600, 26, escuro?0x3a444e:0xc9c5bc, escuro?0x232a32:0xdedbd3);
+  grupo.add(grade);
+  // base MDF redonda
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(CRU.baseR*e.f, CRU.baseR*e.f, 18, 48),
+    new THREE.MeshStandardMaterial({color:0xb08b56, roughness:.9}));
+  base.position.y = 9; grupo.add(base);
+  const raio = {g:12.7, m:9.5, c:15.9};
+  for (const [a,b,bit] of e.barras) grupo.add(tubo3D(a, b, raio[bit], 0x7f8da0));
+  // juntas: marcador laranja (esqueleto) ou par de discos com pino liso (modelo com juntas)
+  const mj = new THREE.MeshStandardMaterial({color:0xe65100, roughness:.5});
+  const mDisco = new THREE.MeshStandardMaterial({color:0x1c1c1e, roughness:.75});
+  const mPino  = new THREE.MeshStandardMaterial({color:0x9aa4ad, metalness:.7, roughness:.35});
+  // JUNTA COMBINADA (design aprovado 23/10, junta-hirth.scad):
+  // pilha de 3 discos (externos escuros + central azul 32%) no eixo do pivô;
+  // lado ASCENDENTE = pescoço largo + colar de aperto apontando para o corpo.
+  // Medidas do render @1,35 m: Ø73, pilha 89, pescoço Ø55×20, colar Ø40×39 mm.
+  const mCentral = new THREE.MeshStandardMaterial({color:0x3584a7, roughness:.45});
+  const cil = (r, h, mat, pos, dirV) => {
+    const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, 28), mat);
+    m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), dirV);
+    m.position.copy(pos);
+    grupo.add(m);
+  };
+  const juntaCombinada = (c, eixoV, ascV) => {
+    const f = e.f;
+    const R = 3.14*f, H = 7.63*f;                // Ø73,5 e pilha 89 mm @1,30 (recalibrado 23/10)
+    const hC = 0.32*H, hE = 0.34*H;
+    const cc = new THREE.Vector3(c.x, c.z, c.y);
+    cil(R, hE, mDisco, cc.clone().addScaledVector(eixoV, -(hC+hE)/2), eixoV);
+    cil(R, hC, mCentral, cc, eixoV);
+    cil(R, hE, mDisco, cc.clone().addScaledVector(eixoV, (hC+hE)/2), eixoV);
+    // pescoço e colar no lado ascendente
+    const rP = 2.26*f, lP = 1.64*f, rC = 1.64*f, lC = 3.2*f;
+    cil(rP, lP, mDisco, cc.clone().addScaledVector(ascV, R*0.8 + lP/2), ascV);
+    cil(rC, lC, mDisco, cc.clone().addScaledVector(ascV, R*0.8 + lP + lC/2), ascV);
+  };
+  const eixoDe = (a,b) => new THREE.Vector3(b.x-a.x, b.z-a.z, b.y-a.y).normalize();
+  const lerpP  = (a,b,t) => ({x:a.x+(b.x-a.x)*t, y:a.y+(b.y-a.y)*t, z:a.z+(b.z-a.z)*t});
+  const EIXO_X = new THREE.Vector3(1,0,0);
+  // rotação do pé por FURAÇÃO INDEXADA (mock pe-encaixe-mock.scad):
+  // placa circular com coroa de furos sobre a chapa + flange da canela com
+  // par de furos. Tudo proporcional à altura (sc = mm do projeto @1,30).
+  const peIndexado = (J, s) => {
+    const sc = e.f / 11.712;
+    const t = J["tornozelo_"+s];
+    const z0 = t.z + 2*sc;                      // sobre a chapa do pé
+    const mPlaca = new THREE.MeshStandardMaterial({color:0x8e959c, metalness:.75, roughness:.35});
+    const mFuro  = new THREE.MeshStandardMaterial({color:0x14171a, roughness:.8});
+    const Y = new THREE.Vector3(0,1,0);
+    const pc = new THREE.Vector3(t.x, z0, t.y);
+    const placa = new THREE.Mesh(new THREE.CylinderGeometry(40*sc, 40*sc, 4*sc, 36), mPlaca);
+    placa.position.copy(pc); grupo.add(placa);
+    for (let i = 0; i < 12; i++){               // coroa de furos (passos de 30°)
+      const a = i * Math.PI/6;
+      const furo = new THREE.Mesh(new THREE.CylinderGeometry(2.75*sc, 2.75*sc, 5.5*sc, 10), mFuro);
+      furo.position.set(t.x + Math.cos(a)*31*sc, z0, t.y + Math.sin(a)*31*sc);
+      grupo.add(furo);
+    }
+    const flange = new THREE.Mesh(new THREE.CylinderGeometry(22*sc, 22*sc, 6*sc, 36), mDisco);
+    flange.position.set(t.x, z0 + 5*sc, t.y); grupo.add(flange);
+    const cone = new THREE.Mesh(new THREE.CylinderGeometry(15*sc, 22*sc, 12*sc, 24), mDisco);
+    cone.position.set(t.x, z0 + 14*sc, t.y); grupo.add(cone);
+  };
+
+  const montaJuntas = () => {
+    const EIXO_Y = new THREE.Vector3(0,0,1);   // profundidade (cena)
+    for (const s of ["e","d"]){
+      const J = e.J;
+      peIndexado(J, s);
+      // joelho: pivô lateral; ascendente aponta para o quadril
+      juntaCombinada(J["joelho_"+s], EIXO_X, eixoDe(J["joelho_"+s], J["quadril_"+s]));
+      // tornozelo: colar coaxial com a canela (gira o pé) + pilha lateral
+      // (flexão); descendente segue para a chapa do pé. Dentro da bota.
+      juntaCombinada(J["tornJunta_"+s], EIXO_X, eixoDe(J["tornJunta_"+s], J["joelho_"+s]));
+      // cotovelo: pivô ⊥ ao braço no plano frontal (eixo E3); asc -> ombro
+      {
+        const u = eixoDe(J["ombro_"+s], J["cotovelo_"+s]);
+        juntaCombinada(J["cotovelo_"+s], new THREE.Vector3(u.y, -u.x, 0).normalize(),
+                       eixoDe(J["cotovelo_"+s], J["ombro_"+s]));
+      }
+      // ombro: gira no plano do corpo (eixo Y); asc -> ponta da travessa
+      juntaCombinada(J["ombro_"+s], EIXO_Y, eixoDe(J["ombro_"+s], J["trav_"+s]));
+      // pulso: plano do corpo (eixo Y); asc -> cotovelo
+      juntaCombinada(J["punho_"+s], EIXO_Y, eixoDe(J["punho_"+s], J["cotovelo_"+s]));
+      if (s === "e"){
+        // junta da cabeça (uma só): colar coaxial com o pescoço (gira) +
+        // pilha de eixo lateral (inclina); descendente = haste/anel da cabeça
+        juntaCombinada(J.cabJunta, EIXO_X, eixoDe(J.cabJunta, J.pescocoTopo));
+      }
+      // quadril: espelho do ombro — o colar ascendente agarra o EIXO DO QUADRIL
+      // (coaxial com ele, rumo ao centro) e a pilha Hirth fica ⊥, eixo Y;
+      // a coxa (descendente) sai do disco central
+      juntaCombinada(J["quadril_"+s], EIXO_Y, eixoDe(J["quadril_"+s], J.quadrilC));
+    }
+  };
+  if (modo3d === "juntas") montaJuntas();
+  for (const k of ["tornozelo_e","tornozelo_d","joelho_e","joelho_d","quadril_e","quadril_d",
+                   "ombro_e","ombro_d","cotovelo_e","cotovelo_d","punho_e","punho_d",
+                   "pescocoBase","pescocoTopo"]){
+    const p = e.J[k];
+    if (modo3d === "juntas" && PIVOS.includes(k)) continue;  // pivôs já desenhados em montaJuntas()
+    const s = new THREE.Mesh(new THREE.SphereGeometry(16,16,12), mj);
+    s.position.set(p.x, p.z, p.y); grupo.add(s);
+  }
+  // chapas do pé: contorno do pé com recuo fixo, alumínio 3 mm entre sola e canela
+  const k = Math.max(0.2, 1 - FISICO.recuoPlaca / (PE_RMIN * e.f));
+  for (const lado of [1, -1]){
+    const forma = new THREE.Shape();
+    PE_CONTORNO.forEach(([x, y], i) => {
+      const px = (PE_CENTRO[0] + (x - PE_CENTRO[0]) * k) * e.f * lado;
+      const py = (PE_CENTRO[1] + (y - PE_CENTRO[1]) * k) * e.f;
+      i ? forma.lineTo(px, py) : forma.moveTo(px, py);
+    });
+    const g = new THREE.ExtrudeGeometry(forma, {depth: FISICO.chapa, bevelEnabled: false});
+    g.rotateX(-Math.PI/2);
+    const placa = new THREE.Mesh(g, new THREE.MeshStandardMaterial({color:0xc8cdd4, metalness:.8, roughness:.35}));
+    placa.position.y = FISICO.sola;
+    grupo.add(placa);
+  }
+  // cabeça: malha real decimada (4k faces), fantasma
+  if (cabecaGeo){
+    const cab = new THREE.Mesh(cabecaGeo,
+      new THREE.MeshStandardMaterial({color:0x8fb4d8, transparent:true, opacity:.3,
+        depthWrite:false, side:THREE.DoubleSide}));
+    cab.scale.set(e.f, e.f, e.f);
+    grupo.add(cab);
+  }
+  cena.add(grupo);
+  ctl.target.set(0, estado.antenas/2.3, 0);
+}
+
+/* ============ desenho 2D (vista frontal cotada) ============ */
+function desenha2D(){
+  const e = estado, W=1000, H=1260, M=55;
+  const ESC = 1090 / e.antenas;
+  const px = (x,z) => [W/2 + x*ESC, H - M - z*ESC];
+  const L = [];
+  L.push(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" font-family="IBM Plex Sans,sans-serif">`);
+  L.push(`<rect width="100%" height="100%" fill="var(--painel)"/>`);
+  // fundo: FRAME FRONTAL OFICIAL da Farol (440x530 px; 529 px = 120 un;
+  // centro x = 219,5 px) — a mesma imagem calibrada onde os discos foram medidos.
+  // ATENÇÃO (23/10): o frame é um render em PERSPECTIVA e o desenho é ortográfico;
+  // a calibração vale no plano médio e distorce nos extremos (pés ~ mais baixos
+  // na imagem do que na ortografia). CAL_DZ/CAL_ESC permitem ajuste fino local
+  // quando uma região específica estiver em análise. A estrutura (z físicos)
+  // é a verdade; o fundo é referência visual.
+  {
+    const CAL_DZ = 0, CAL_ESC = 1;   // deslocamento (un) e escala do fundo
+    // recalibrado 23/10: contato dos pés y=511, topo da cabeça y=43 (z=111)
+    const uppF = 4.2162 / CAL_ESC, YB = 511;
+    const x0 = (0 - 219.5)/uppF * e.f,  x1 = (440 - 219.5)/uppF * e.f;
+    const zTopo = (YB/uppF + CAL_DZ) * e.f, zBase = ((YB - 530)/uppF + CAL_DZ) * e.f;
+    const [ix, iy] = px(x0, zTopo);
+    L.push(`<image x="${ix.toFixed(0)}" y="${iy.toFixed(0)}" width="${((x1-x0)*ESC).toFixed(0)}" height="${((zTopo-zBase)*ESC).toFixed(0)}" opacity="0.35" href="farol-frente.png"/>`);
+  }
+  const [gx0, gy] = px(-44*e.f, 0), [gx1] = px(44*e.f, 0);
+  L.push(`<line x1="${gx0}" y1="${gy}" x2="${gx1}" y2="${gy}" stroke="var(--fg2)" stroke-width="2" stroke-dasharray="8 4"/>`);
+  L.push(`<text x="${gx1-70}" y="${gy-6}" font-size="12" fill="var(--fg2)">base MDF (z=0)</text>`);
+  const rotSeg = {canela:[12,-6], coxa:[12,-6], coluna:[12,-6], "eixo quadril":[46,-12],
+    "travessa ombro":[240,-14], "encaixe ombro":[18,-2], "úmero":[16,4], "antebraço":[16,0], "pescoço":[16,-30], "tubo do pé":[14,16], "tubo da cabeça":[14,-10]};
+  // descontos de junta por segmento [lado a, lado b], em unidades do modelo:
+  // 3,0 = lado descendente (até a borda do disco central); 4,0 = lado
+  // ascendente (ponta do tubo dentro do colar); null = caso especial
+  const DESCJ = {canela:[4.0,3.0], "tubo do pé":[1.5,3.0], coxa:[4.0,3.0],
+    coluna:[0,0], "eixo quadril":[4.0,4.0], "travessa ombro":[0,0],
+    "encaixe ombro":[0,4.0], "úmero":[3.0,4.0], "antebraço":[3.0,4.0],
+    "pescoço":[0,4.0], "tubo da cabeça":[3.0,1.5]};
+  const d3 = (a,b) => Math.hypot(b.x-a.x, b.y-a.y, b.z-a.z);
+  const lerp3 = (a,b,t) => ({x:a.x+(b.x-a.x)*t, y:a.y+(b.y-a.y)*t, z:a.z+(b.z-a.z)*t});
+  const linha = (a,b,w,op) => {
+    const [xa,ya]=px(a.x,a.z), [xb,yb]=px(b.x,b.z);
+    L.push(`<line x1="${xa.toFixed(1)}" y1="${ya.toFixed(1)}" x2="${xb.toFixed(1)}" y2="${yb.toFixed(1)}" stroke="var(--tubo)" stroke-width="${w}" stroke-linecap="round" opacity="${op}"/>`);
+  };
+  let reais = {};   // nome -> comprimento real (p/ rótulo)
+  for (const s of e.segs){
+    const dd = DESCJ[s.nome] || [0,0];
+    const da = dd[0]*e.f, db = dd[1]*e.f;
+    const Lr = Math.max(0, s.L - da - db);
+    reais[s.nome] = Lr;
+    const pares = [[s.a, s.b]];
+    if (s.qtd === 2 && !s.nome.includes("eixo")) pares.push([espelha(s.a), espelha(s.b)]);
+    for (const [a,b] of pares){
+      if (!frontReal){ linha(a,b,7,0.9); continue; }
+      linha(a, b, 2.5, 0.55);                           // extensão fina até os centros
+      const t1 = Math.min(da/s.L, 0.49), t2 = Math.min(db/s.L, 0.49);
+      linha(lerp3(a,b,t1), lerp3(b,a,t2), 7, 0.95);     // eixo REAL grosso
+    }
+  }
+  for (const s of e.segs){
+    const [xa,ya]=px(s.a.x,s.a.z), [xb,yb]=px(s.b.x,s.b.z);
+    const [dx,dy] = rotSeg[s.nome] || [12,-6];
+    const rotulo = frontReal ? Math.round(reais[s.nome]) : Math.round(s.L);
+    L.push(`<text x="${((xa+xb)/2+dx).toFixed(0)}" y="${((ya+yb)/2+dy).toFixed(0)}" font-size="13" font-weight="600" fill="var(--tubo)">${s.nome} ${rotulo}</text>`);
+  }
+  // junções numeradas (J1..J18) — a legenda fica abaixo do desenho
+  for (const j of JUNCOES){
+    const p = e.J[j.k], [x,y] = px(p.x, p.z);
+    L.push(`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="12" fill="var(--junta)"/>`);
+    L.push(`<text x="${x.toFixed(1)}" y="${(y+4.5).toFixed(1)}" font-size="13" font-weight="700" text-anchor="middle" fill="#fff">${j.n}</text>`);
+  }
+  const [cx,cy]=px(e.J.cabecaC.x, e.J.cabecaC.z);
+  L.push(`<text x="${cx+170}" y="${cy-200}" font-size="12" fill="var(--fg2)">cabeça Ø~${Math.round(e.cabecaD)} (anel interno próprio)</text>`);
+  L.push(`<text x="20" y="30" font-size="16" font-weight="700" font-family="Archivo,sans-serif" fill="var(--fg)">Esqueleto dimensional — ${( $("altura").value )} m ao topo da cabeça</text>`);
+  L.push(`<text x="20" y="50" font-size="12" fill="var(--fg2)">Cotas em mm, centro a centro de junta · fator ${e.f.toFixed(2)}× · pé: sola (0–${FISICO.sola}) + chapa alumínio (z≈${FISICO.sola+FISICO.chapa})</text>`);
+  L.push(`</svg>`);
+  const leg = JUNCOES.map(j =>
+    `<span><b>J${j.n}</b> ${j.nome} · z${Math.round(e.J[j.k].z)}</span>`).join("");
+  $("vista2d").innerHTML =
+    L.join("\n") + svgLateral() +
+    `<div class="legenda-j">${leg}</div>`;
+}
+let frontReal = false;
+
+// vista lateral (profundidade × altura): renderiza SÓ o lado projetado (E) e o
+// eixo central — nada do lado oculto, para não poluir com objetos atrás
+function svgLateral(){
+  const e = estado, W = 620, H = 1260, M = 55;
+  const ESC = 1090 / e.antenas;
+  const px = (y, z) => [W/2 - y*ESC, H - M - z*ESC];   // frente (−y) à direita
+  const L = [];
+  L.push(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" font-family="IBM Plex Sans,sans-serif">`);
+  L.push(`<rect width="100%" height="100%" fill="var(--painel)"/>`);
+  { // fundo: frame de PERFIL oficial (mesma calibração de altura; profundidade
+    // centrada no eixo da imagem — ajuste fino via PERFIL_DESLOC se preciso)
+    const uppF = 4.2432, YB = 513, PERFIL_DESLOC = 0;   // recalibrado 23/10
+    // o frame olha para a DIREITA: imagem +x = frente = nosso −y
+    const y0 = -(0 - 219.5)/uppF * e.f + PERFIL_DESLOC*e.f;   // borda esquerda
+    const y1 = -(440 - 219.5)/uppF * e.f + PERFIL_DESLOC*e.f; // borda direita
+    const zT = YB/uppF * e.f, zB = (YB - 530)/uppF * e.f;
+    const [ix, iy] = px(y0, zT);
+    L.push(`<image x="${ix.toFixed(0)}" y="${iy.toFixed(0)}" width="${((y0-y1)*ESC).toFixed(0)}" height="${((zT-zB)*ESC).toFixed(0)}" opacity="0.35" href="farol-perfil.png"/>`);
+  }
+  const J = e.J;
+  // dois planos: CENTRAL (cabeça+corpo+pernas) e BRAÇOS (plano mais próximo),
+  // com cores próprias e visibilidade pelos checkboxes
+  const grupos = {
+    central: {ligado: latVer.central, barra: "var(--tubo)", junta: "var(--junta)",
+      cadeia: [[J.tornozelo_e, J.joelho_e], [J.joelho_e, J.quadril_e],
+               [J.quadril_e, J.quadrilC], [J.quadrilC, J.pescocoBase],
+               [J.pescocoBase, J.pescocoTopo], [J.pescocoTopo, J.cabecaC]],
+      juntas: ["tornozelo_e","tornJunta_e","joelho_e","quadril_e","quadrilC",
+               "pescocoBase","pescocoTopo","cabJunta","cabecaC"]},
+    bracos: {ligado: latVer.bracos, barra: "#43a047", junta: "#8e24aa",
+      cadeia: [[J.trav_e, J.ombro_e], [J.ombro_e, J.cotovelo_e], [J.cotovelo_e, J.punho_e]],
+      juntas: ["trav_e","ombro_e","cotovelo_e","punho_e"]},
+  };
+  for (const g of Object.values(grupos)){
+    if (!g.ligado) continue;
+    for (const [a,b] of g.cadeia){
+      const [xa,ya] = px(a.y, a.z), [xb,yb] = px(b.y, b.z);
+      L.push(`<line x1="${xa.toFixed(1)}" y1="${ya.toFixed(1)}" x2="${xb.toFixed(1)}" y2="${yb.toFixed(1)}" stroke="${g.barra}" stroke-width="7" stroke-linecap="round" opacity="0.9"/>`);
+    }
+    for (const k of g.juntas){
+      const j = JUNCOES.find(q => q.k === k);
+      const p = J[k];
+      if (!j || !p) continue;
+      const [x,y] = px(p.y, p.z);
+      L.push(`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="12" fill="${g.junta}"/>`);
+      L.push(`<text x="${x.toFixed(1)}" y="${(y+4.5).toFixed(1)}" font-size="13" font-weight="700" text-anchor="middle" fill="#fff">${j.n}</text>`);
+    }
+  }
+  L.push(`<text x="20" y="30" font-size="16" font-weight="700" font-family="Archivo,sans-serif" fill="var(--fg)">Vista lateral — lado E (meia-renderização)</text>`);
+  L.push(`<text x="20" y="50" font-size="12" fill="var(--fg2)">Profundidade × altura, mm · só o lado projetado é desenhado</text>`);
+  L.push(`</svg>`);
+  return `<div class="lat-controles">
+      <label><input type="checkbox" id="lat-central" ${latVer.central?"checked":""}>
+        <span style="color:var(--tubo)">■</span> centro (cabeça·corpo·pernas)</label>
+      <label><input type="checkbox" id="lat-bracos" ${latVer.bracos?"checked":""}>
+        <span style="color:#43a047">■</span> braços (plano próximo)</label>
+    </div>` + L.join("\n");
+}
+let latVer = {central: true, bracos: true};
+
+/* ============ lista de corte ============ */
+function montaLista(){}
+
+/* ============ modos 3D e partida ============ */
+function defineModo(m){
+  modo3d = m;
+  $("modo-esqueleto").setAttribute("aria-pressed", String(m === "esqueleto"));
+  $("modo-juntas").setAttribute("aria-pressed", String(m === "juntas"));
+  montaCena();
+}
+$("modo-esqueleto").addEventListener("click", () => defineModo("esqueleto"));
+$("modo-juntas").addEventListener("click", () => defineModo("juntas"));
+$("altura").addEventListener("input", atualizaTudo);
+$("vista2d").addEventListener("change", ev => {
+  if (ev.target.id === "lat-central"){ latVer.central = ev.target.checked; desenha2D(); }
+  if (ev.target.id === "lat-bracos"){ latVer.bracos = ev.target.checked; desenha2D(); }
+  if (ev.target.id === "fr-reais"){ frontReal = ev.target.checked; desenha2D(); }
+});
+
+init3D();
+atualizaTudo();
+</script>
+
+</body>
+</html>

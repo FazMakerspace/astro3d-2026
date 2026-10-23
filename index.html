@@ -516,6 +516,48 @@ function desenha2D(){
     const rotulo = frontReal ? Math.round(reais[s.nome]) : Math.round(s.L);
     L.push(`<text x="${((xa+xb)/2+dx).toFixed(0)}" y="${((ya+yb)/2+dy).toFixed(0)}" font-size="13" font-weight="600" fill="var(--tubo)">${s.nome} ${rotulo}</text>`);
   }
+  // cotas de conjunto (23/10): cabeça, visor e emblema medidos no modelo 3D
+  // e no render frontal calibrado (un do modelo; rótulos em mm via e.f)
+  {
+    const C = "#f2b705";
+    const CAB = {x0:-29.7, x1:29.7, z0:62.1, z1:111};          // malha low-poly
+    const VIS = {x0:-26.4, x1:28.3, z0:66.9, z1:102.7};        // placa azul da face
+    const EMB = {cx:0, cz:44.8, d:22.5, nW:16.6, nH:15.7};     // disco do peito + nuvem
+    const mm = v => Math.round(v*e.f);
+    L.push(`<defs><marker id="ca" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="${C}"/></marker></defs>`);
+    const cl = (xa,za,xb,zb,dash,seta) => {
+      const [x1,y1]=px(xa*e.f,za*e.f),[x2,y2]=px(xb*e.f,zb*e.f);
+      L.push(`<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${C}" stroke-width="1.6"${dash?' stroke-dasharray="5 4" opacity="0.8"':''}${seta?' marker-start="url(#ca)" marker-end="url(#ca)"':''}/>`);
+    };
+    const tx = (x,z,t,anch="middle",fs=15) => {
+      const [X,Y]=px(x*e.f,z*e.f);
+      L.push(`<text x="${X.toFixed(0)}" y="${Y.toFixed(0)}" font-size="${fs}" font-weight="700" text-anchor="${anch}" fill="${C}">${t}</text>`);
+    };
+    // largura da cabeça — acima das antenas
+    cl(CAB.x0, 88, CAB.x0, 119, true); cl(CAB.x1, 88, CAB.x1, 119, true);
+    cl(CAB.x0, 117.5, CAB.x1, 117.5, false, true);
+    tx(0, 120.5, `cabeça ${mm(CAB.x1-CAB.x0)}`);
+    // altura da cabeça — à direita
+    cl(CAB.x1, CAB.z0, 36.5, CAB.z0, true); cl(26, CAB.z1, 36.5, CAB.z1, true);
+    cl(35, CAB.z0, 35, CAB.z1, false, true);
+    tx(37.5, (CAB.z0+CAB.z1)/2 - 0.6, mm(CAB.z1-CAB.z0), "start");
+    // largura do visor — logo abaixo dele
+    cl(VIS.x0, VIS.z0, VIS.x0, 63, true); cl(VIS.x1, VIS.z0, VIS.x1, 63, true);
+    cl(VIS.x0, 64.3, VIS.x1, 64.3, false, true);
+    tx(-14, 61.0, `visor ${mm(VIS.x1-VIS.x0)}`);
+    // altura do visor — à esquerda
+    cl(VIS.x0, VIS.z0, -36.5, VIS.z0, true); cl(VIS.x0, VIS.z1, -36.5, VIS.z1, true);
+    cl(-35, VIS.z0, -35, VIS.z1, false, true);
+    tx(-37.5, (VIS.z0+VIS.z1)/2 - 0.6, mm(VIS.z1-VIS.z0), "end");
+    // emblema do peitoral — círculo tracejado + leader
+    {
+      const [ex,ey]=px(EMB.cx*e.f, EMB.cz*e.f);
+      L.push(`<circle cx="${ex.toFixed(1)}" cy="${ey.toFixed(1)}" r="${(EMB.d/2*e.f*ESC).toFixed(1)}" fill="none" stroke="${C}" stroke-width="1.6" stroke-dasharray="5 4" opacity="0.9"/>`);
+      cl(EMB.cx+EMB.d/2*0.74, EMB.cz-EMB.d/2*0.74, 23, 33, false);
+      tx(23.6, 32.2, `emblema Ø ${mm(EMB.d)}`, "start");
+      tx(23.6, 29.2, `nuvem ${mm(EMB.nW)}×${mm(EMB.nH)}`, "start", 12);
+    }
+  }
   // junções numeradas (J1..J18) — a legenda fica abaixo do desenho
   for (const j of JUNCOES){
     const p = e.J[j.k], [x,y] = px(p.x, p.z);

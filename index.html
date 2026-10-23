@@ -522,7 +522,7 @@ function desenha2D(){
     const C = "#f2b705";
     const CAB = {x0:-29.7, x1:29.7, z0:62.1, z1:111};          // malha low-poly
     const VIS = {x0:-26.4, x1:28.3, z0:66.9, z1:102.7};        // placa azul da face
-    const EMB = {cx:0, cz:44.8, d:22.5, nW:16.6, nH:15.7};     // disco do peito + nuvem
+    const EMB = {cx:0, cz:45.1, d:22.3, nW:16.6, nH:15.7};     // disco do peito (externo, c/ anel) + nuvem
     const mm = v => Math.round(v*e.f);
     L.push(`<defs><marker id="ca" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="${C}"/></marker></defs>`);
     const cl = (xa,za,xb,zb,dash,seta) => {
